@@ -1,77 +1,25 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Photon.Pun;
 
 public class PlayerMovement : MonoBehaviour
 {
-    private float horizontal;
-    private float speed = 10f;
-    private float jumpingPower = 24f;
-    private bool isFacingRight = true;
-    PhotonView view;
+    public CharacterController controller;
+    public float speed = 6f;
 
-    [SerializeField] private Rigidbody2D rb;
-    [SerializeField] private Transform groundCheck;
-    [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private GameObject bulletPrefab;
-    [SerializeField] private Transform bulletPosition;
-
-    private void Start()
-    {
-        view = GetComponent<PhotonView>();
-    }
+    // Update is called once per frame
     void Update()
     {
-        if (view.IsMine)
+        float horizontal = Input.GetAxisRaw("Horizontal");
+        float vertical = Input.GetAxisRaw("Vertical");
+        Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
+
+        if (direction.magnitude >= 0.1f)
         {
-            horizontal = Input.GetAxisRaw("Horizontal");
+            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0f, targetAngle, 0f);
 
-            if (Input.GetButtonDown("Jump") && IsGrounded())
-            {
-                rb.velocity = new Vector2(rb.velocity.x, jumpingPower);
-            }
-
-            if (Input.GetButtonUp("Jump") && rb.velocity.y > 0f)
-            {
-                rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.5f);
-            }
-
-            Flip();
-            if (Input.GetButtonDown("Fire1"))
-                Fire();
+            controller.Move(direction * speed * Time.deltaTime);
         }
-     
-    }
-
-    private void FixedUpdate()
-    {
-        rb.velocity = new Vector2(horizontal * speed, rb.velocity.y);
-    }
-
-    private bool IsGrounded()
-    {
-        return Physics2D.OverlapCircle(groundCheck.position, 0.2f, groundLayer);
-    }
-
-    private void Flip()
-    {
-        if (isFacingRight && horizontal < 0f || !isFacingRight && horizontal > 0f)
-        {
-            isFacingRight = !isFacingRight;
-            transform.Rotate(0f, 180f, 0f);
-        }
-    }
-
-    private void Fire()
-    {
-        Instantiate(bulletPrefab, bulletPosition.position, bulletPosition.rotation);
-
-        /*GameObject bullet = ObjectPool.instance.GetPooledObject();
-        if (bullet != null)
-        {
-            bullet.transform.position = bulletPosition.position;
-            bullet.SetActive(true);
-        }*/
     }
 }
